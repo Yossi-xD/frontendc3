@@ -98,36 +98,53 @@
     </form>
   </main>
 <script>
-  document.querySelector("form").addEventListener("submit", async (e) => {
+  const token = localStorage.getItem("token");
+  const editData = JSON.parse(localStorage.getItem("editRequest"));
+  const form = document.querySelector("form");
+
+  if (editData) {
+    document.querySelector("input[placeholder='Title *']").value = editData.title || "";
+    document.querySelector("textarea[placeholder='Description *']").value = editData.description || "";
+    document.querySelectorAll("select")[1].value = editData.size || "Small (fits in a bag)";
+    document.querySelector("input[placeholder='Approximate Weight (lbs)']").value = editData.weight || "";
+    document.querySelector("textarea[placeholder='Pickup Address *']").value = editData.productLocation || "";
+    document.querySelector("textarea[placeholder='Drop-off Address *']").value = editData.userLocation || "";
+    document.querySelector("input[type='date']").value = editData.date?.substring(0, 10) || "";
+    document.querySelectorAll("select")[2].value = editData.urgency || "Medium - Within a few days";
+    document.querySelector("input[placeholder='Budget ($) *']").value = editData.payment || "";
+    document.querySelector("textarea[placeholder*='instructions']").value = editData.notes || "";
+  }
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    const token = localStorage.getItem("token"); // ✅ get JWT token from localStorage
-    if (!token) {
-      alert("You must be logged in to post a request.");
-      return;
-    }
-
-    const form = e.target;
 
     const request = {
       title: form.querySelector("input[placeholder='Title *']").value.trim(),
       description: form.querySelector("textarea[placeholder='Description *']").value.trim(),
       size: form.querySelectorAll("select")[1].value,
       weight: form.querySelector("input[placeholder='Approximate Weight (lbs)']").value,
-      pickup: form.querySelector("textarea[placeholder='Pickup Address *']").value.trim(),
-      dropoff: form.querySelector("textarea[placeholder='Drop-off Address *']").value.trim(),
+      productLocation: form.querySelector("textarea[placeholder='Pickup Address *']").value.trim(),
+      userLocation: form.querySelector("textarea[placeholder='Drop-off Address *']").value.trim(),
       date: form.querySelector("input[type='date']").value,
       urgency: form.querySelectorAll("select")[2].value,
       payment: form.querySelector("input[placeholder='Budget ($) *']").value,
       notes: form.querySelector("textarea[placeholder*='instructions']").value.trim()
     };
 
+    // Keep createdBy if editing
+    if (editData?.createdBy) {
+      request.createdBy = editData.createdBy;
+    }
+
+    const url = editData ? `/api/requests/${editData._id}` : `/api/requests`;
+    const method = editData ? "PUT" : "POST";
+
     try {
-      const res = await fetch("/api/requests", {
-        method: "POST",
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // ✅ include the token
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(request)
       });
@@ -135,13 +152,14 @@
       const data = await res.json();
 
       if (res.ok) {
-        alert("✅ Request posted successfully!");
+        alert(editData ? "✅ Request updated!" : "✅ Request posted!");
+        localStorage.removeItem("editRequest");
         location.href = "../Browse Requests/browse-requests.html";
       } else {
         alert("❌ Error: " + data.message);
       }
     } catch (err) {
-      console.error("❌ Post failed:", err);
+      console.error("❌ Request failed:", err);
       alert("Something went wrong.");
     }
   });

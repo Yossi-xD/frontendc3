@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - C³</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/dashboard Page/styles.css" />
 </head>
 <body>
-
-  <!-- Header -->
   <header class="main-header">
     <div class="logo-section">
       <span class="logo-icon">📦</span>
@@ -17,99 +15,106 @@
     <nav class="nav-links">
       <a href="#" class="active">Dashboard</a>
       <a href="../post delivery page/post-delivery.html">Post Delivery</a>
-      <a href="../Browse Requests/browse-requests.html" id="browse-link">Browse Requests</a>
+      <a href="../Browse Requests/browse-requests.html">Browse Requests</a>
       <a href="../track delivery/track-delivery.html">Track Delivery</a>
       <a href="../messages/index.html">Messages</a>
       <a href="../profile/profile.html">Profile</a>
       <a href="../payment page/payment.html">Payment</a>
       <a href="../accessibility/accessibility.html">Accessibility</a>
-      <a href="../index.html">Logout</a>
+      <a href="../main/main.html">Logout</a>
     </nav>
   </header>
 
-  <!-- Dashboard Content -->
   <main class="dashboard">
     <section class="dashboard-header">
-      <h1>Welcome back, <span class="highlight">Yousef Yousef!</span></h1>
+      <h1>Welcome back, <span id="userName" class="highlight">User</span>!</h1>
       <p>Here's what's happening with your deliveries today.</p>
     </section>
 
-    <!-- Top Stats -->
     <div class="stats-grid">
-      <div class="stat-card"><p>Active Requests</p><h2>12</h2></div>
-      <div class="stat-card"><p>Completed Deliveries</p><h2>23</h2></div>
-      <div class="stat-card"><p>Rating</p><h2>4.8</h2></div>
-      <div class="stat-card"><p>Earnings</p><h2>$234</h2></div>
+      <div class="stat-card"><p>Pending Requests</p><h2 id="pendingCount">0</h2></div>
+      <div class="stat-card"><p>Accepted Requests</p><h2 id="acceptedCount">-</h2></div>
+      <div class="stat-card"><p>Delivered Items</p><h2 id="deliveredCount">-</h2></div>
+      <div class="stat-card"><p>Total Spent</p><h2 id="totalSpent">$0</h2></div>
     </div>
 
-    <!-- Quick Actions & Activity -->
     <div class="grid-2">
-      <!-- Quick Actions -->
       <div class="card">
         <h3>Quick Actions</h3>
-        <button class="btn blue" onclick="location.href='../post delivery page/post-delivery.html'">Post New Request</button>
-        <button class="btn green" onclick="location.href='../Browse Requests/browse-requests.html'">Browse Delivery Opportunities</button>
-        <button class="btn purple" onclick="location.href='../track delivery/track-delivery.html'">Track Active Deliveries</button>
+        <button class="btn blue quick-action-post" onclick="location.href='../post delivery page/post-delivery.html'">Post New Request</button>
+        <button class="btn green quick-action-browse" onclick="location.href='../Browse Requests/browse-requests.html'">Browse Delivery Opportunities</button>
+        <button class="btn purple quick-action-tracker" onclick="location.href='../track delivery/track-delivery.html'">Track Active Deliveries</button>
       </div>
 
-      <!-- Recent Activity -->
       <div class="card">
         <h3>Recent Activity</h3>
-        <div class="activity-item">
+        <div class="activity-item" data-type="delivery">
           <span>Delivered laptop to Yousef M.</span>
           <span class="badge completed">completed</span>
         </div>
-        <div class="activity-item">
+        <div class="activity-item" data-type="request">
           <span>Posted request for art supplies</span>
           <span class="badge active">active</span>
         </div>
-        <div class="activity-item">
-          <span>New message from traveler Hamad D.</span>
+        <div class="activity-item" data-type="message">
+          <span>New message from traveler Yousef</span>
           <span class="badge unread">unread</span>
         </div>
       </div>
     </div>
 
-    <!-- Performance Chart Placeholder -->
-    <div class="card">
+    <div class="card performance-chart">
       <h3>Delivery Performance</h3>
       <div class="chart-placeholder">Performance chart would be displayed here</div>
     </div>
   </main>
 
-  <!-- Hide Browse Requests for Requester -->
 <script>
   const userName = localStorage.getItem("userName") || "User";
-  const nameElement = document.getElementById("userName");
-  if (nameElement) {
-    nameElement.textContent = userName;
-  }
+  const userRole = localStorage.getItem("userRole");
+  const userEmail = localStorage.getItem("userEmail");
+  const token = localStorage.getItem("token");
 
-  const role = localStorage.getItem("userRole");
-  if (!role) {
-    alert("No valid role found. Please login again.");
+  document.getElementById("userName").textContent = userName;
+
+  if (!userRole || !token || !userEmail) {
+    alert("Session expired. Please log in again.");
     location.href = "../main/main.html";
   }
 
-  // ✅ Always show Browse Requests
-  const browseLink = document.getElementById("browse-link");
-  const browseButton = document.querySelector("button.btn.green");
-
-  if (role === "requester") {
-    const trackerBtn = document.querySelector(".quick-action-tracker");
-    if (trackerBtn) trackerBtn.style.display = "none";
-
-    const chartSection = document.querySelector(".performance-chart");
-    if (chartSection) chartSection.style.display = "none";
-
-    const activities = document.querySelectorAll(".activity-item");
-    activities.forEach(item => {
-      if (item.dataset.type === "delivery") {
-        item.style.display = "none";
-      }
+  if (userRole === "requester") {
+    document.querySelector(".quick-action-tracker")?.remove();
+    document.querySelector(".performance-chart")?.remove();
+    document.querySelectorAll(".activity-item").forEach(item => {
+      if (item.dataset.type === "delivery") item.remove();
     });
+
+    fetch("/api/payments", {
+      headers: { Authorization: "Bearer " + token }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const myPayments = data.filter(p =>
+        p.email === userEmail || p.createdBy?.email === userEmail
+      );
+
+      const pending = myPayments.filter(p => p.status === "Pending");
+      const paid = myPayments.filter(p => p.status === "Paid");
+      const totalSpent = paid.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      document.getElementById("pendingCount").textContent = pending.length;
+      document.getElementById("totalSpent").textContent = `$${totalSpent}`;
+
+      console.log("📊 Dashboard loaded:", {
+        totalSpent,
+        pendingCount: pending.length,
+        userEmail
+      });
+    })
+    .catch(err => console.error("❌ Error loading payments:", err));
   }
 </script>
+
 
 </body>
 </html>

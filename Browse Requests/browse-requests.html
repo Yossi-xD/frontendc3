@@ -64,11 +64,10 @@
     </section>
   </main>
 
- <script>
+<script>
   async function fetchRequests() {
     const token = localStorage.getItem("token");
     const userRole = localStorage.getItem("userRole");
-    const userEmail = localStorage.getItem("userEmail");
     const container = document.getElementById("requests-container");
 
     try {
@@ -81,11 +80,7 @@
         const card = document.createElement("article");
         card.className = "request-card";
 
-        // 🪵 Debug log
-        console.log("Request email:", req.email, "User email:", userEmail);
-
-        const showCancel =
-          userRole === "requester"; // REMOVE `&& req.email === userEmail` for now
+        const showButtons = userRole === "requester";
 
         card.innerHTML = `
           <div class="request-header">
@@ -108,7 +103,10 @@
           </div>
           <div class="btn-group">
             <button class="secondary">View Details</button>
-            ${showCancel ? `<button class="danger" onclick="deleteRequest('${req._id}', this)">Cancel</button>` : ""}
+            ${showButtons ? `
+              <button class="edit-btn" onclick='editRequest(${JSON.stringify(req)})'>Edit</button>
+              <button class="danger" onclick="deleteRequest('${req._id}', this)">Cancel</button>
+            ` : ""}
           </div>
         `;
         container.prepend(card);
@@ -118,28 +116,32 @@
     }
   }
 
+  function editRequest(req) {
+    localStorage.setItem("editRequest", JSON.stringify(req));
+    location.href = "../post delivery page/post-delivery.html";
+  }
+
   function deleteRequest(id, button) {
     const token = localStorage.getItem("token");
     if (!confirm("Are you sure you want to cancel this request?")) return;
 
     fetch(`/api/requests/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: "Bearer " + token
-      }
+      headers: { Authorization: "Bearer " + token }
     })
-    .then(res => {
-      if (!res.ok) throw new Error("Delete failed");
-      button.closest(".request-card").remove();
-    })
-    .catch(err => {
-      alert("Failed to cancel request.");
-      console.error(err);
-    });
+      .then(res => {
+        if (!res.ok) throw new Error("Delete failed");
+        button.closest(".request-card").remove();
+      })
+      .catch(err => {
+        alert("Failed to cancel request.");
+        console.error(err);
+      });
   }
 
   document.addEventListener("DOMContentLoaded", fetchRequests);
 </script>
+
 
 </body>
 </html>

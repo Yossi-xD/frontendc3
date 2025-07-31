@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/payment page/payment.css" />
 </head>
 <body>
-   <header class="main-header">
+  <header class="main-header">
     <div class="logo-section">
       <span class="logo-icon">📦</span>
       <span class="logo-text">C³</span>
@@ -19,13 +19,14 @@
       <a href="../track delivery/track-delivery.html">Track Delivery</a>
       <a href="../messages/index.html">Messages</a>
       <a href="../profile/profile.html">Profile</a>
-      <a href="../payment page/payment.html"class="active">Payment</a>
+      <a href="../payment page/payment.html" class="active">Payment</a>
       <a href="../accessibility/accessibility.html">Accessibility</a>
       <a href="../main/main.html">Logout</a>
     </nav>
   </header>
 
- <main class="payments-container" id="traveler-view" style="display: none;">
+  <!-- Traveler View -->
+  <main class="payments-container" id="traveler-view" style="display: none;">
     <h1>Manage Your Earnings</h1>
     <p class="subheading">Manage your payment methods and track your earnings from deliveries.</p>
 
@@ -89,7 +90,8 @@
     </div>
   </main>
 
-   <main class="payments-container" id="requester-view" style="display: none;">
+  <!-- Requester View -->
+  <main class="payments-container" id="requester-view" style="display: none;">
     <h1>Manage Your Payments</h1>
     <p class="subheading">Track your spending and delivery charges.</p>
 
@@ -198,6 +200,5 @@
       window.location.href = "../main/main.html";
     }
   </script>
-  
 </body>
 </html>
