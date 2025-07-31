@@ -79,21 +79,35 @@
 
   <!-- Hide Browse Requests for Requester -->
 <script>
-  const role = localStorage.getItem("userRole");
+  const userName = localStorage.getItem("userName") || "User";
+  const nameElement = document.getElementById("userName");
+  if (nameElement) {
+    nameElement.textContent = userName;
+  }
 
+  const role = localStorage.getItem("userRole");
   if (!role) {
     alert("No valid role found. Please login again.");
     location.href = "../main/main.html";
   }
 
+  // ✅ Always show Browse Requests
   const browseLink = document.getElementById("browse-link");
-  if (browseLink && role !== "traveler") {
-    browseLink.style.display = "none";
-  }
-
   const browseButton = document.querySelector("button.btn.green");
-  if (browseButton && role !== "traveler") {
-    browseButton.style.display = "none";
+
+  if (role === "requester") {
+    const trackerBtn = document.querySelector(".quick-action-tracker");
+    if (trackerBtn) trackerBtn.style.display = "none";
+
+    const chartSection = document.querySelector(".performance-chart");
+    if (chartSection) chartSection.style.display = "none";
+
+    const activities = document.querySelectorAll(".activity-item");
+    activities.forEach(item => {
+      if (item.dataset.type === "delivery") {
+        item.style.display = "none";
+      }
+    });
   }
 </script>
 
