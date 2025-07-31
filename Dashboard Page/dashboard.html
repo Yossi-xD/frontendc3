@@ -89,31 +89,46 @@
       if (item.dataset.type === "delivery") item.remove();
     });
 
-    fetch("/api/payments", {
-      headers: { Authorization: "Bearer " + token }
-    })
-    .then(res => res.json())
-    .then(data => {
-      const myPayments = data.filter(p =>
-        p.email === userEmail || p.createdBy?.email === userEmail
+    // 🔄 Fetch both requests and payments
+    Promise.all([
+      fetch("/api/payments", {
+        headers: { Authorization: "Bearer " + token }
+      }).then(res => res.json()),
+      fetch("/api/requests", {
+        headers: { Authorization: "Bearer " + token }
+      }).then(res => res.json())
+    ])
+    .then(([payments, requests]) => {
+      const myRequests = requests.map(r => r.title);
+      const myPayments = payments.filter(p =>
+        (p.email === userEmail || p.createdBy?.email === userEmail)
       );
 
-      const pending = myPayments.filter(p => p.status === "Pending");
-      const paid = myPayments.filter(p => p.status === "Paid");
-      const totalSpent = paid.reduce((sum, p) => sum + (p.amount || 0), 0);
+      // ✅ Count only pending payments linked to real request titles
+      const pending = myPayments.filter(p =>
+        p.status?.toLowerCase() === "pending" &&
+        myRequests.includes(p.title)
+      );
+
+      const paid = myPayments.filter(p =>
+        p.status?.toLowerCase() === "paid"
+      );
+
+      const totalSpent = pending.reduce((sum, p) => sum + (p.amount || 0), 0);
 
       document.getElementById("pendingCount").textContent = pending.length;
       document.getElementById("totalSpent").textContent = `$${totalSpent}`;
 
-      console.log("📊 Dashboard loaded:", {
-        totalSpent,
-        pendingCount: pending.length,
-        userEmail
+      console.log("✅ Dashboard Loaded:", {
+        requests: myRequests,
+        pending,
+        totalSpent
       });
     })
-    .catch(err => console.error("❌ Error loading payments:", err));
+    .catch(err => console.error("❌ Error loading dashboard data:", err));
   }
 </script>
+
 
 
 </body>
